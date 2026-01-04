@@ -7,7 +7,7 @@ base_router = APIRouter(
 app_version = os.getenv("APP_VERSION")
 app_name = os.getenv("APP_NAME")    
 @base_router.get("/")
-def welcome():
+async def welcome():
     return {"message": "Welcome to the FastAPI application!",
             "app_name": app_name,
             "app_version": app_version}
