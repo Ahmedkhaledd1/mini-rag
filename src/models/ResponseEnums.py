@@ -5,3 +5,5 @@ class ResponseStatus(Enum):
     FILE_TYPE_NOT_SUPPORTED = "file type not supported"
     FILE_SIZE_EXCEEDED = "file size exceeded"
     FILE_UPLOAD_ERROR = "file upload error"
+    PROCESSING_FAILED = "file processing failed"
+    PROCESSING_SUCCESS = "file processed successfully"
