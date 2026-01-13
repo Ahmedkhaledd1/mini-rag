@@ -3,7 +3,8 @@ import aiofiles
 from fastapi import FastAPI,APIRouter,Depends,UploadFile,status
 from helpers.config import Settings, get_settings
 from fastapi.responses import JSONResponse
-from controllers import DataController,ProjectController
+from controllers import DataController,ProjectController,ProcessController
+from .schemas import ProcessRequest
 from models import ResponseStatus
 import logging
 import os
@@ -25,7 +26,7 @@ async def upload_data(project_id: str,file: UploadFile,
             content={"status":message}
             )
     
-    file_path=DataController().generate_unique_filename(file.filename,project_id)
+    file_path,file_name=DataController().generate_unique_filepath(file.filename,project_id)
     try:
         async with aiofiles.open(file_path, 'wb') as f:
             while chunk := await file.read(app_settings.FILE_DEFAULT_CHUNK_SIZE):
@@ -39,5 +40,34 @@ async def upload_data(project_id: str,file: UploadFile,
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"status":message}
+        content={"status":message
+                ,"file_id":file_name}
         )
+
+
+@data_router.post("/process/{project_id}")
+async def process_endpoint(project_id: str,request: ProcessRequest):
+    
+    file_name=request.file_name
+    chunk_size=request.chunk_size
+    overlap_size=request.overlap_size
+    process_controller=ProcessController(project_id=project_id)
+
+    file_chunks=process_controller.process_file_content(
+        filename=file_name,
+        chunk_size=chunk_size,
+        chunk_overlap=overlap_size)
+
+    if file_chunks is None or len(file_chunks)==0:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"status":ResponseStatus.PROCESSING_FAILED.value}
+            )
+    
+    return file_chunks
+
+
+
+
+
+
