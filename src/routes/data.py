@@ -7,9 +7,10 @@ from controllers import DataController,ProjectController,ProcessController
 from .schemas import ProcessRequest
 from models import ResponseStatus
 import logging
-from models import ProjectModel
-from models import ChunkModel
+from models import ProjectModel,AssetModel,ChunkModel
+from models.db_schemes import Asset
 from models.db_schemes.data_chunks import  DataChunk
+from models.AssetTypeEnum import AssetTypeEnum
 import os
 
 logger=logging.getLogger("uvicorn.error")
@@ -44,11 +45,22 @@ async def upload_data(request: Request,project_id: str,file: UploadFile,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"status":ResponseStatus.FILE_UPLOAD_FAILED.value}
             )
+    
+    asset_rescourse=Asset(
+        asset_project_id=project.id,
+        asset_name=file_name,
+        asset_type=AssetTypeEnum.FILE.value,
+        asset_size=os.path.getsize(file_path)
+
+    )
+
+    asset_model=await AssetModel.create_instance(db_client=request.app.db_client)
+    asset_record=await asset_model.create_asset(asset=asset_rescourse)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"status":message
-                ,"file_id":file_name,
+                ,"file_id":asset_record.asset_name,
                 "project_id":str(project.id)}
         )
 
